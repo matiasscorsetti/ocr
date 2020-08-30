@@ -1,9 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\Nueva carpeta",
-    "\\Nueva carpeta\\src"
+    "\\src"
   ],
-  "SelectedNode": "\\Nueva carpeta",
+  "SelectedNode": "\\src\\predict_price.py",
   "PreviewInSolutionExplorer": false
 }

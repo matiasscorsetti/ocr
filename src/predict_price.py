@@ -4,34 +4,34 @@ import argparse
 import get_features, get_text
 
 
-def predict_price(image_file, model, symbol_search=None):
+def predict_price(image_file, model, symbol_search='$'):
 
     df = get_text.get_text(image_file, symbol_search)
     df = get_features.get_features(df)
 
-    features = ['page_height',
-                'page_width',
+    features = [
                 'block_confidence',
                 'paragraph_confidence',
                 'word_confidence',
-                'block_area',
-                'paragraph_area',
-                'word_area',
-                'prev_symbol',
-                'text_type',
-                'prev_text_type',
-                'next_text_type',
+                'block_weigh',
+                'paragraph_weigh',
+                'word_weigh',
                 'rel_word_block_area',
                 'rel_word_parag_area',
                 'rel_parag_block_area',
+                'prev_symbol',
+                'next_symbol',
+                'text_type',
+                'prev_text_type',
+                'next_text_type',
                 'text_len',
+                'is_a_symbol',
                 'number_type',
                 ]
     X = df[features].copy()
     
-    y = model.predict(X.values)
-    
-    df['predict'] = y
+    y_pred = model.predict(X.values)
+    df['predict'] = y_pred
 
     return df
 
@@ -52,13 +52,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('detect_file', help='The image for text detection.')
     parser.add_argument('output_file_name', help='Name of the output file to save')
-    parser.add_argument('-detect_symbol', help='Optional detect symbol', default=None)
     args = parser.parse_args()
 
     # predict price
-    df = predict_price(args.detect_file, model, args.detect_symbol)
+    df = predict_price(args.detect_file, model)
 
-    # print price
-    print('Price:', df[df['predict']==1]['text_join'].values)
+    # print results
+    print('Price:', df[df['predict']==1]['number'].values)
+    print()
+    print('Text:')
+    print( '_'.join(df['text_join'].values))
 
     df.to_csv(args.output_file_name + '.csv')

@@ -26,7 +26,7 @@ def text_type(x):
 
 def extrac_numbers(x):
     
-    return re.sub('[^0-9,]', "", x)
+    return re.sub('[^0-9,.]', "", x)
 
 
 def number_type(x):
@@ -56,40 +56,7 @@ def number(x):
     
         except ValueError:
             return 0
-        
 
-def extrac_numbers(x):
-    
-    return re.sub('[^0-9,]', "", x)
-
-
-def number_type(x):
-    
-    try:
-        float(x)
-        return 1
-
-    except ValueError:
-        try:
-            float(x.replace(',', '.'))
-
-            return 1
-    
-        except ValueError:
-            return 0
-
-        
-def number(x):
-    
-    try:
-        return float(x)
-
-    except ValueError:
-        try:
-            return float(x.replace(',', '.'))
-    
-        except ValueError:
-            return 0
 
 def get_features(df):
     
@@ -100,13 +67,30 @@ def get_features(df):
               ]
     for col in columns:
         df[col.replace('vert', 'area')] = df[col].apply(area)
+        
+    # weighted area
+    columns = ['block_area',
+               'paragraph_area',
+               'word_area',
+              ]
+    for col in columns:
+        df[col.replace('area', 'weigh')] = df[col].divide(df[col].max())
+        
+    # relative area
+    df.loc[:, 'rel_word_block_area'] = df['word_area'].divide(df['block_area'])
+    df.loc[:, 'rel_word_parag_area'] = df['word_area'].divide(df['paragraph_area'])
+    df.loc[:, 'rel_parag_block_area'] = df['paragraph_area'].divide(df['block_area'])
     
     # join text
     df.loc[:, 'text_join'] = df['text'].apply(join_list)
     
     # prev symbol
-    df.loc[:, 'prev_symbol'] = np.where(df['symbol_search_pos'].shift(1), 1, 0)
+    df.loc[:, 'prev_symbol'] = np.where(df['symbol_search_pos'].shift(-1), 1, 0)
     df.loc[:, 'prev_symbol'] = df.loc[:, 'prev_symbol'].fillna(0)
+    
+    # next symbol
+    df.loc[:, 'next_symbol'] = np.where(df['symbol_search_pos'].shift(1), 1, 0)
+    df.loc[:, 'next_symbol'] = df.loc[:, 'next_symbol'].fillna(0)
     
     # text type
     df.loc[:, 'text_type'] = df['text_join'].apply(text_type)
@@ -118,11 +102,6 @@ def get_features(df):
     # next text tpye
     df.loc[:, 'next_text_type'] = df['text_type'].shift(-1)
     df.loc[:, 'next_text_type'] = df.loc[:, 'next_text_type'].fillna(0)
-    
-    # relative area
-    df.loc[:, 'rel_word_block_area'] = df['word_area'].divide(df['block_area'])
-    df.loc[:, 'rel_word_parag_area'] = df['word_area'].divide(df['paragraph_area'])
-    df.loc[:, 'rel_parag_block_area'] = df['paragraph_area'].divide(df['block_area'])
     
     # text len
     df.loc[:, 'text_len'] = df['text_join'].str.len()
@@ -137,6 +116,6 @@ def get_features(df):
     df.loc[:, 'number_type'] = df['text_numbers'].apply(number_type)
     
     # number
-    df.loc[:, 'number'] = df['text_numbers'].apply(number)
+    df.loc[:, 'number'] = df['text_join'].apply(number)
     
     return df
